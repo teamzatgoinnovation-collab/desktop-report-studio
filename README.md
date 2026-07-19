@@ -31,7 +31,7 @@ pnpm --filter @zatgo/report-studio-desktop dev
 Optional env (picked up by Vite for the default base URL):
 
 ```bash
-VITE_FRAPPE_BASE_URL=http://127.0.0.1:8082 pnpm dev:report-studio
+VITE_FRAPPE_BASE_URL=https://erp.zatgo.online pnpm dev:report-studio
 ```
 
 Default site URL matches ERPNext development publish port (`8082`).

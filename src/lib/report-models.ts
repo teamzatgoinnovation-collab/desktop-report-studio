@@ -2,7 +2,7 @@ export type DataSourceApp =
   | "resto_pos"
   | "inventory_plus"
   | "crm_plus"
-  | "project_tracker"
+  | "tracker"
   | "finance_plus"
   | "fleet_management";
 
