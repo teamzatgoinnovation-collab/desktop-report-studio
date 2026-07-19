@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@zatgo/ui";
 import { mockRepo, type ChartSpec } from "@/lib/mock-data";
 
 function maxValue(series: ChartSpec["series"]) {

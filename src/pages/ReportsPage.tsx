@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@zatgo/ui";
+import {
+  Button,
+  DataTable,
+  ErrorState,
+  FormDialog,
+  PageHeader,
+  SearchField,
+} from "@zatgo/ui";
 import { Plus } from "@zatgo/icons";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
-import { SearchField } from "@/components/SearchField";
-import { DataTable } from "@/components/DataTable";
-import { FormDialog } from "@/components/FormDialog";
 import { mockRepo, type SavedReport } from "@/lib/mock-data";
 
 export function ReportsPage() {
@@ -18,7 +21,7 @@ export function ReportsPage() {
   const [kind, setKind] = useState<SavedReport["kind"]>("table");
   const qc = useQueryClient();
 
-  const { data = [] } = useQuery({
+  const { data = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["report-studio", "reports", query],
     queryFn: () => mockRepo.listReports(query),
   });
@@ -64,6 +67,16 @@ export function ReportsPage() {
     [],
   );
 
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load reports"
+        description={error instanceof Error ? error.message : String(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -79,7 +92,12 @@ export function ReportsPage() {
           </>
         }
       />
-      <DataTable data={data} columns={columns} emptyMessage="No reports yet" />
+      <DataTable
+        data={data}
+        columns={columns}
+        emptyMessage="No reports yet"
+        loading={isLoading}
+      />
 
       <FormDialog
         open={open}

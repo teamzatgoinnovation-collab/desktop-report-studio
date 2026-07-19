@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@zatgo/ui";
 import { mockRepo } from "@/lib/mock-data";
 
 export function PivotPage() {

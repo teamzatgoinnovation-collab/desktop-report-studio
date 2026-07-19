@@ -1,5 +1,11 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Button, cn } from "@zatgo/ui";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  AppShellLayout,
+  Button,
+  CommandPalette,
+  type AppShellNavItem,
+  type CommandPaletteItem,
+} from "@zatgo/ui";
 import {
   BarChart3,
   Database,
@@ -7,48 +13,42 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Moon,
-  PieChart,
   Settings,
   Sun,
   Table2,
   FileSpreadsheet,
 } from "@zatgo/icons";
+import { useMemo, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useThemeStore } from "@/store/theme";
 import { useSessionStore } from "@/store/session";
 import { logoutFromErpnext } from "@/lib/client";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
-const nav = [
-  { to: "/", label: "Home", icon: LayoutDashboard, end: true },
-  { to: "/datasets", label: "Datasets", icon: Database },
-  { to: "/reports", label: "Reports", icon: FileSpreadsheet },
-  { to: "/pivot", label: "Pivot", icon: Table2 },
-  { to: "/charts", label: "Charts", icon: BarChart3 },
-  { to: "/dashboards", label: "Dashboards", icon: LayoutGrid },
-  { to: "/exports", label: "Exports", icon: FileDown },
-  { to: "/connection", label: "Connection", icon: Settings },
+const nav: AppShellNavItem[] = [
+  { href: "/", label: "Home", icon: LayoutDashboard, end: true },
+  { href: "/datasets", label: "Datasets", icon: Database },
+  { href: "/reports", label: "Reports", icon: FileSpreadsheet },
+  { href: "/pivot", label: "Pivot", icon: Table2 },
+  { href: "/charts", label: "Charts", icon: BarChart3 },
+  { href: "/dashboards", label: "Dashboards", icon: LayoutGrid },
+  { href: "/exports", label: "Exports", icon: FileDown },
+  { href: "/connection", label: "Connection", icon: Settings },
 ];
 
 export function AppShell() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const mode = useThemeStore((s) => s.mode);
-  const setMode = useThemeStore((s) => s.setMode);
+  const cycleMode = useThemeStore((s) => s.cycleMode);
   const connected = useSessionStore((s) => s.connected);
   const user = useSessionStore((s) => s.user);
   const fullName = useSessionStore((s) => s.fullName);
-  const baseUrl = useSessionStore((s) => s.connection.baseUrl);
   const [version, setVersion] = useState("dev");
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     void window.zatgoDesktop?.getAppVersion().then(setVersion).catch(() => undefined);
   }, []);
-
-  const cycleTheme = () => {
-    const next = mode === "light" ? "dark" : mode === "dark" ? "system" : "light";
-    setMode(next);
-  };
 
   const onSignOut = async () => {
     setSigningOut(true);
@@ -61,70 +61,70 @@ export function AppShell() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--rs-sidebar)]">
-        <div className="border-b border-[var(--color-border)] px-4 py-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            ZatGo
-          </p>
-          <p className="text-lg font-semibold">Report Studio</p>
-        </div>
-        <nav className="flex flex-1 flex-col gap-0.5 p-2">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-[var(--rs-sidebar-active)] font-medium text-[var(--color-foreground)]"
-                      : "text-[var(--color-muted-foreground)] hover:bg-[var(--rs-sidebar-active)] hover:text-[var(--color-foreground)]",
-                  )
-                }
-              >
-                <Icon className="size-4 shrink-0" />
-                {item.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-        <div className="space-y-2 border-t border-[var(--color-border)] p-3 text-xs text-[var(--color-muted-foreground)]">
-          <p
-            className="truncate font-medium text-[var(--color-foreground)]"
-            title={fullName ?? user ?? undefined}
-          >
-            {connected ? fullName || user : "Not signed in"}
-          </p>
-          <p className="truncate">{connected ? "Connected" : "Not connected"}</p>
-          <p>v{version}</p>
-        </div>
-      </aside>
+  const commandItems = useMemo<CommandPaletteItem[]>(
+    () => [
+      ...nav.map((item) => ({
+        id: `nav-${item.href}`,
+        label: item.label,
+        group: "Navigate",
+        onSelect: () => navigate(item.href),
+      })),
+      {
+        id: "theme",
+        label: `Cycle theme (now: ${mode})`,
+        group: "Actions",
+        shortcut: "T",
+        onSelect: () => cycleMode(),
+      },
+      {
+        id: "sign-out",
+        label: "Sign out",
+        group: "Actions",
+        onSelect: () => void onSignOut(),
+      },
+    ],
+    [cycleMode, mode, navigate],
+  );
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-end gap-2 border-b border-[var(--color-border)] px-4">
-          <Button variant="outline" disabled={signingOut} onClick={() => void onSignOut()}>
-            Sign out
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={cycleTheme}>
-            {mode === "dark" ? (
-              <Moon className="size-4" />
-            ) : mode === "light" ? (
-              <Sun className="size-4" />
-            ) : (
-              <PieChart className="size-4" />
-            )}
-            Theme: {mode}
-          </Button>
-        </header>
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+  return (
+    <>
+      <CommandPalette items={commandItems} />
+      <AppShellLayout
+        productTitle="Report Studio"
+        nav={nav}
+        pathname={pathname}
+        renderLink={({ href, className, children, end }) => (
+          <NavLink to={href} end={end} className={className}>
+            {children}
+          </NavLink>
+        )}
+        sidebarFooter={
+          <>
+            <p
+              className="truncate font-medium text-[var(--color-foreground)]"
+              title={fullName ?? user ?? undefined}
+            >
+              {connected ? fullName || user : "Not signed in"}
+            </p>
+            <p className="truncate">{connected ? "Connected" : "Not connected"}</p>
+            <p>v{version}</p>
+          </>
+        }
+        headerTitle={<span className="text-[var(--color-muted-foreground)]">⌘K for commands</span>}
+        headerActions={
+          <>
+            <Button variant="outline" size="sm" disabled={signingOut} onClick={() => void onSignOut()}>
+              Sign out
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => cycleMode()}>
+              {mode === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+              {mode}
+            </Button>
+          </>
+        }
+      >
+        <Outlet />
+      </AppShellLayout>
+    </>
   );
 }

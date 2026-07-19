@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/components/PageHeader";
+import { ErrorState, LoadingState, PageHeader } from "@zatgo/ui";
 import { mockRepo } from "@/lib/mock-data";
 
 const cards = [
@@ -13,10 +13,21 @@ const cards = [
 ];
 
 export function DashboardPage() {
-  const { data } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["report-studio", "counts"],
     queryFn: () => mockRepo.counts(),
   });
+
+  if (isLoading) return <LoadingState label="Loading dashboard…" />;
+  if (isError) {
+    return (
+      <ErrorState
+        title="Dashboard unavailable"
+        description={error instanceof Error ? error.message : String(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <div>
