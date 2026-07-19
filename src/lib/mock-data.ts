@@ -11,6 +11,15 @@ import type {
 
 export type * from "@/lib/report-models";
 
+export type PivotTable = {
+  rowField: string;
+  colField: string;
+  valueField: string;
+  rows: string[];
+  cols: string[];
+  cells: PivotCell[];
+};
+
 const NOT_READY = "ERPNext report mutations are not available yet.";
 
 function asRows(data: unknown): Record<string, unknown>[] {
@@ -18,7 +27,12 @@ function asRows(data: unknown): Record<string, unknown>[] {
   return [];
 }
 
-/** Live ERPNext-backed report studio via zatgo_core.bi (no mock seed). */
+function matchesQuery(text: string, query?: string) {
+  if (!query?.trim()) return true;
+  return text.toLowerCase().includes(query.trim().toLowerCase());
+}
+
+/** Live ERPNext-backed report studio via zatgo_core.bi (UI still uses optional query filters). */
 export const mockRepo = {
   datasetName(id: string) {
     return id;
@@ -33,10 +47,12 @@ export const mockRepo = {
       charts: 0,
       dashboards: 0,
       exports: 0,
+      exportsQueued: 0,
+      rowsIndexed: datasets.reduce((sum, d) => sum + d.rowCount, 0),
     };
   },
 
-  async listDatasets(): Promise<Dataset[]> {
+  async listDatasets(query?: string): Promise<Dataset[]> {
     const env = await callZatGoApi<unknown[]>(ZatGoApi.bi.reportsList, {
       page: 1,
       page_size: 100,
@@ -51,27 +67,39 @@ export const mockRepo = {
         rowCount: Number(row.rowCount ?? 0),
         refreshedAt: String(row.refreshedAt ?? new Date().toISOString()),
       }))
-      .filter((d) => d.id);
+      .filter((d) => d.id && matchesQuery(`${d.name} ${d.app}`, query));
   },
 
-  async listReports(): Promise<SavedReport[]> {
+  async listReports(query?: string): Promise<SavedReport[]> {
+    void query;
     return [];
   },
 
-  async listCharts(): Promise<ChartSpec[]> {
+  async listCharts(query?: string): Promise<ChartSpec[]> {
+    void query;
     return [];
   },
 
-  async listDashboards(): Promise<Dashboard[]> {
+  async listDashboards(query?: string): Promise<Dashboard[]> {
+    void query;
     return [];
   },
 
-  async listExports(): Promise<ExportJob[]> {
+  async listExports(query?: string): Promise<ExportJob[]> {
+    void query;
     return [];
   },
 
-  async getPivot(): Promise<PivotCell[]> {
-    return [];
+  async getPivot(_datasetId?: string): Promise<PivotTable> {
+    void _datasetId;
+    return {
+      rowField: "Branch",
+      colField: "Category",
+      valueField: "Amount",
+      rows: [],
+      cols: [],
+      cells: [],
+    };
   },
 
   async createReport(_input: Omit<SavedReport, "id" | "updatedAt">) {
